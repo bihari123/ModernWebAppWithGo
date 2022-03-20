@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"example.com/app1/config"
+	"example.com/app1/models"
 )
 
 var app *config.AppConfig
@@ -17,10 +18,14 @@ func NewTemplates(a *config.AppConfig) {
 	app = a
 }
 
+func AddDefaultData(templateDate *models.TemplateData) *models.TemplateData {
+	return templateDate
+}
+
 // func map is a map of functions that we are gonna use in a template
 var functions = template.FuncMap{}
 
-func RenderTemplate(w http.ResponseWriter, tmpl string) {
+func RenderTemplate(w http.ResponseWriter, tmpl string, template_data *models.TemplateData) {
 	var templateCache map[string]*template.Template
 	if app.UseCache {
 		templateCache = app.TemplateCache
@@ -38,7 +43,8 @@ func RenderTemplate(w http.ResponseWriter, tmpl string) {
 
 	buf := new(bytes.Buffer)
 
-	_ = template.Execute(buf, nil)
+	template_data = AddDefaultData(template_data)
+	_ = template.Execute(buf, template_data)
 	_, err := buf.WriteTo(w)
 
 	if err != nil {
