@@ -25,14 +25,18 @@ func init() {
 
 	r := handlers.NewRepo(&appConfig)
 	handlers.NewHandler(r)
-	r.App.UseCache =false
+	r.App.UseCache = false
 }
 
 func main() {
-	http.HandleFunc("/", handlers.Repo.Home)
-	http.HandleFunc("/about", handlers.Repo.About)
+
+	server := http.Server{
+		Addr:    portNumber,
+		Handler: routes(&appConfig),
+	}
+	
 	fmt.Println("Starting the application on port number", portNumber)
-	err := http.ListenAndServe(portNumber, nil)
+	err := server.ListenAndServe()
 	if err != nil {
 		fmt.Println(err)
 		return
