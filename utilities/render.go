@@ -7,31 +7,39 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+
+	"example.com/app1/config"
 )
+
+var app *config.AppConfig
+
+func NewTemplates(a *config.AppConfig) {
+	app = a
+}
 
 // func map is a map of functions that we are gonna use in a template
 var functions = template.FuncMap{}
 
 func RenderTemplate(w http.ResponseWriter, tmpl string) {
+	var templateCache map[string]*template.Template
+	if app.UseCache {
+		templateCache = app.TemplateCache
 
-	templateCache, err := CreateTemplateCache()
-	fmt.Println(templateCache)
-	if err != nil {
-		fmt.Println("Error making tempalte cache")
-		log.Fatal(err)
+	} else {
+		templateCache, _ = CreateTemplateCache()
 	}
 
 	template, ok := templateCache[tmpl]
 
 	if !ok {
-		fmt.Println("Error finding the template cache")
-		log.Fatal(err)
+		log.Fatal("Error finding the template cache")
+
 	}
 
 	buf := new(bytes.Buffer)
 
 	_ = template.Execute(buf, nil)
-	_, err = buf.WriteTo(w)
+	_, err := buf.WriteTo(w)
 
 	if err != nil {
 		fmt.Println("Error writing template to the browser", err)
@@ -43,7 +51,7 @@ func CreateTemplateCache() (myCache map[string]*template.Template, err error) {
 
 	myCache = map[string]*template.Template{}
 
-	pages, err := filepath.Glob("./tempates/*.page.tmpl")
+	pages, err := filepath.Glob("./templates/*.page.tmpl")
 
 	if err != nil {
 		return
@@ -61,6 +69,7 @@ func CreateTemplateCache() (myCache map[string]*template.Template, err error) {
 		matches, err := filepath.Glob("./templates/*.layout.tmpl")
 
 		if err != nil {
+			fmt.Println("found some error in preparing  matches, quitting")
 			return myCache, err
 
 		}
@@ -69,12 +78,12 @@ func CreateTemplateCache() (myCache map[string]*template.Template, err error) {
 			template_set, err = template_set.ParseGlob("./templates/*layout.tmpl")
 
 			if err != nil {
+				fmt.Println("err in template set")
 				return myCache, err
 
 			}
 
 		}
-
 		myCache[name] = template_set
 
 	}
