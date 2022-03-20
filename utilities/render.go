@@ -1,6 +1,7 @@
 package utilities
 
 import (
+	"bytes"
 	"fmt"
 	"html/template"
 	"log"
@@ -12,24 +13,33 @@ import (
 var functions = template.FuncMap{}
 
 func RenderTemplate(w http.ResponseWriter, tmpl string) {
-	parsedTempate, err := template.ParseFiles("./templates/" + tmpl)
 
+	templateCache, err := CreateTemplateCache()
+	fmt.Println(templateCache)
 	if err != nil {
-		fmt.Println("\n\n\n")
-		log.Fatalln("[ERROR] Error parsing the template: ", err)
-		fmt.Println("\n\n\n")
-	}
-	err = parsedTempate.Execute(w, nil)
-
-	if err != nil {
-		fmt.Println("\n\n\n")
-		log.Fatalln("[ERROR] Error parsing the template: ", err)
-		fmt.Println("\n\n\n")
+		fmt.Println("Error making tempalte cache")
+		log.Fatal(err)
 	}
 
+	template, ok := templateCache[tmpl]
+
+	if !ok {
+		fmt.Println("Error finding the template cache")
+		log.Fatal(err)
+	}
+
+	buf := new(bytes.Buffer)
+
+	_ = template.Execute(buf, nil)
+	_, err = buf.WriteTo(w)
+
+	if err != nil {
+		fmt.Println("Error writing template to the browser", err)
+	}
 }
 
-func RenderTemplateUsingBaseTemplate(w http.ResponseWriter, tmpl string) (myCache map[string]*template.Template, err error) {
+// creates a template cache as a map
+func CreateTemplateCache() (myCache map[string]*template.Template, err error) {
 
 	myCache = map[string]*template.Template{}
 
